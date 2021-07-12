@@ -115,7 +115,7 @@ def create_adversarial_pattern(input_image, model,input_label):
   return signed_grad
 
 
-# In[122]:
+# In[214]:
 
 
 def build_fgsm(image,label, model, eps):
@@ -172,7 +172,7 @@ models
 #adv_image, perturb = build_fgsm(images[0],labels[0], model_covid, 0.08)
 
 
-# In[179]:
+# In[220]:
 
 
 # plt.figure(figsize=(8,8))
@@ -183,7 +183,7 @@ models
 # plt.axis('off')
 
 # plt.subplot(222)
-# plt.imshow(np.reshape(adv_image[0], (224,224,3)))
+# plt.imshow(np.reshape(adv_img[0], (224,224,3)))
 # plt.title("Image")
 # plt.axis('off')
 
@@ -197,17 +197,31 @@ csv_path = './execution/CSV_Files/test.csv'
 csv_data = pd.read_csv(csv_path)
 
 
-# In[106]:
+# In[193]:
+
+
+model_covid = models['ensaio_DenseNet201_imagenet_WH_224']
+
+
+# In[219]:
+
+
+p = covid_dataset+"/"+csv_data['folder']+csv_data['image_name']+".png"
+img = read_images_from_csv(p[3])
+adv_img, perturb = build_fgsm(img,csv_data['label'][3], model_covid, 0.08)
+
+
+# In[218]:
 
 
 def read_images_from_csv(image_path):
-    img = tf.keras.preprocessing.image.load_img(image_path,target_size=(224,224,3),interpolation='bicubic',color_mode = "rgb")
-    img = 255.0*np.array(img) / (1.0*np.nanmax(img))
+    img = tf.keras.preprocessing.image.load_img(image_path,target_size=(224,224,3),color_mode = "rgb")
+    img = np.array(img) / 255.0
     
     return img 
 
 
-# In[175]:
+# In[223]:
 
 
 def gen_fgsm(model, csv_data, base_path, model_path):
@@ -219,29 +233,29 @@ def gen_fgsm(model, csv_data, base_path, model_path):
             path_new = "../attacks/"+model_path+"/eps_" + str(eps)
             if not os.path.exists(path_new): os.makedirs(path_new)
             for img_path, l in zip(images_path, csv_data['label']):
-                path_covid = path_new + "/" + "COVID" if l == 1 else path_new + "/" + "NORMAL"
+                folder = img_path.split("/")
+                path_covid = path_new + "/" + folder[3]
                 if not os.path.exists(path_covid): os.mkdir(path_covid)
-                fname = path_covid + "/" + "COVID"+str(file)+".png" if l == 1 else path_covid + "/" + "NORMAL"+str(file)+".png"
+                fname = path_covid + "/" + folder[4]
                 img = read_images_from_csv(img_path)
                 adv_img, _ = build_fgsm(img,l, model, eps)
                 adv_img = tf.convert_to_tensor(adv_img)
                 tf.keras.preprocessing.image.save_img(fname, adv_img[0])
-                file += 1
         except Exception as e:
             print("Error: "+str(e))
 
 
-# In[17]:
+# In[188]:
 
 
 #model_covid = models['ensaio_DenseNet201_imagenet_WH_224']
 
 
-# In[176]:
+# In[ ]:
 
 
 for k, model_covid in models.items():
-    gen_fgsm(model_covid, csv_data.head(10), covid_dataset, k)
+    gen_fgsm(model_covid, csv_data.head(5), covid_dataset, k)
 
 
 # In[ ]:
